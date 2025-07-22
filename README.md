@@ -4,5 +4,6 @@ Não foi desenvolvido um sistema operacional real, e, no lugar de carregar o ker
 
 Se gerar uma imagem de disco do sistema Fakenix, em modo Raw, usando o programa Image Writer, e tiver um computador que usa o antigo firmware BIOS, é possível jogar, mesmo que este computador não tenha um HD, desde que permita dar boot por via USB. A dar boot com uma pendrive, por exemplo, o Fakenix passa a ser executado.
 
-https://github.com/user-attachments/assets/c849c186-2fd5-4c4e-ab38-fe0781a8490e
+
+https://github.com/user-attachments/assets/54848c11-b266-454a-84c1-2512cd05a1e0
 
