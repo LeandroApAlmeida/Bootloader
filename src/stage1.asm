@@ -5,7 +5,7 @@
 ;
 ; Este é um projeto básico, que tem como objetivo única e exclusivamente demonstrar o processo em que o
 ; hardware e o software interagem para "dar vida" ao computador, desmistificando um pouco como um computador
-; realmente funciona e instigando o estudante a buscar mais informações sobre o tema. Se você deseja se 
+; realmente funciona e instigando o interessado a buscar mais informações sobre o tema. Se você deseja se 
 ; aprofundar mais no tema de desenvolvimento de sistemas operacionais, sugiro que visite a página
 ; http://www.brokenthorn.com/Resources/OSDevIndex.html que contém um ótimo material para iniciantes, e
 ; também a página https://www.independent-software.com/operating-system-development.html, onde te instrui
