@@ -1,7 +1,5 @@
 
-// Este código em C implementa o estágio 3 do bootloader. O estágio 3 consiste no programa que carregaria
-// ou implementario o kernel do sistema operacional. Como não há sistema operacional, o estágio 3 implementa
-// o jogo da cobrinha em x86 modo real.
+// Este código em ANSI C implementa o jogo da cobrinha.
 
 
 #include <stdio.h>
@@ -197,6 +195,8 @@ void move_snake() {
             // Parte da cobrinha/maçã devorada: Finaliza o jogo por conta da colisão.
             case SNAKE:
             case EATEN_APPLE: {
+
+                PlaySound("crash.wav", NULL, SND_FILENAME | SND_ASYNC);
   
                 game_over = true;
                 return;
