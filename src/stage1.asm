@@ -297,6 +297,8 @@ nop
 
 start:
 
+	mov [drive_number], dl
+
 	cli                 ; Interrompe as interrupções mascaráveis para configurar o programa.
 
 	; Configura a pilha do bootloader no endereço 0x9000 (todos estágios utilizarão a mesma pilha).
@@ -310,7 +312,7 @@ start:
 	
 	; Faz o reset do disco, preparando-o para a leitura do segundo estágio.
 	
-	mov dl, 0x80        ; Código do drive de boot (0x80 é disco rígido).
+	mov dl, [drive_number]        ; Código do drive de boot (0x80 é disco rígido).
 	xor ax, ax          ; Define a função 0 da interrupção de disco (reset do disco).
 	int 0x13            ; Chama a interrupção de disco do BIOS para resetar os controladores de disco.
 	jc disk_error       ; Se a flag de carry (CF) estiver definida como 1, salta para o tratador de erro.
@@ -380,7 +382,7 @@ load_stage2:
 	mov ch, 0           ; O cilindro do disco é definido como 0 (padrão).
 	mov cl, 2           ; Define o setor do disco aonde inicia a leitura, que é o 2.
 	mov dh, 0           ; A cabeça de leitura do disco é 0 (padrão).
-    mov dl, 0x80        ; Código do drive de boot (disco rígido).
+    mov dl, [drive_number]        ; Código do drive de boot (disco rígido).
 	mov bx, 0x7E00      ; Endereço na memória RAM aonde o estágio 2 será carregado e executado.				
     int 0x13            ; Chama a interrupção de disco, para ler os setores e carregar na memória RAM.
     jc disk_error       ; Se a flag de carry (CF) estiver definida como 1, salta para o tratador de erro.
@@ -486,6 +488,7 @@ print_string:
 
 ; Seção de dados do programa:
 
+drive_number db 0
 
 error_str: db 0x0D, 0x0A, 'Erro na leitura do disco.', 0x0D, 0x0A, 0x0D, 0x0A, 'Tecle ENTER para sair.', 0
 
