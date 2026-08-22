@@ -416,7 +416,7 @@ start:
 	
 ; =============================================================================
 ;
-; CARREGAMENTO DO ESTÁGIO 2 (MENU DO SISTEMA OPERACIONAL)
+; CARREGAR O ESTÁGIO 2
 ;
 ;
 ; Esta rotina carrega o Estágio 2 na memória RAM, que implementa o menu do sistema
@@ -496,7 +496,7 @@ load_stage2:
 
 ; =============================================================================
 ;
-; TRATAMENTO DE ERRO NA LEITURA DO DISCO
+; ERRO DE DISCO
 ;
 ;
 ; Esta rotina é executada se acontecer algum erro na leitura do Estágio 2 no 

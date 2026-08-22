@@ -391,7 +391,7 @@ show_menu:
 
 ; =============================================================================
 ;
-; CARREGAR O SISTEMA OPERACIONAL
+; RODAR O SISTEMA OPERACIONAL
 ;
 ;
 ; Ao executar este bloco, simula o carregamento do Sistema Operacional na memória.
