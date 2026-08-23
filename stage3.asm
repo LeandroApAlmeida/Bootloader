@@ -8,9 +8,16 @@
 ; lógica extremamente simples e relativamente fácil de entender o código-fonte. 
 ; 
 ; Não implementei o jogo "do zero". Usei como base o código-fonte disponível na
-; página do GitHub disponível pelo endereço:
+; página do GitHub:
+;
 ;
 ; https://gist.github.com/majkrzak/d75a5b90b3735edd53ac
+;
+;
+; Uma cópia deste código-fonte original se encontra em "Bootloader\extra\snake.asm".
+;
+; No mesmo subdiretório se encontra uma versão do jogo da cobrinha em linguagem
+; C que eu mesmo desenvolvi, em "Bootloader\extra\snake-c\snake.c". 
 ;
 ; ═════════════════════════════════════════════════════════════════════════════
 
@@ -18,7 +25,7 @@
 [BITS 16]                         ; O programa do estágio 3 roda em modo real 
                                   ; de 16 bits.
 								  
-[ORG 0x8200]                      ; O programa será executado no endereço 0x8200.
+[ORG 0x8200]                      ; O programa será carregado no endereço 0x8200.
 
 
 
@@ -75,12 +82,13 @@
 
 ; =============================================================================
 ;
-; CONSTANTES ÍNDICES DE CORES VGA
+; CONSTANTES ÍNDICES DA PALETA DE CORES VGA
 ;
 ;
-; Constantes que representam índices da paleta de cores do VGA, para a renderização
-; do mapa do jogo na tela do computador. O esquema de cores original foi mantido, 
-; apenas alterando-se a tonalidade das cores, para obter um melhor contraste.
+; Constantes que representam índices da paleta de cores padrão do VGA, para a 
+; renderização do mapa do jogo na tela do computador. O esquema de cores original 
+; foi mantido, apenas alterando-se a tonalidade das cores, para obter um melhor 
+; contraste.
 ;
 ; Para ver a paleta completa de cores com seus respectivos índices, você pode 
 ; acessar o site https://www.fountainware.com/EXPL/vga_color_palettes.htm.
@@ -108,14 +116,15 @@
 ;
 ;
 ; Variáveis definidas com base no endereço do segmento de dados extras apontado 
-; pelo registrador ES (0x8A00). Representam o mapa do jogo, ponteiros, contadores
-; e outros elementos lógicos de controle do jogo.
+; pelo registrador ES (endereço 0x8A00). Representam o mapa do jogo, ponteiros, 
+; contadores e outros elementos lógicos de controle do jogo.
 ;
 ; =============================================================================
 
 
 %define map(i) byte [es:i   ]     ; Mapa do jogo, um arranjo com 1024 bytes 
-                                  ; (i = 0 ... 1023).
+                                  ; (i = 0 ... 1023), representando uma matriz
+								  ; de 32x32 posições.
 								  
 %define hptr   word [es:1024]     ; Ponteiro para o índice da célula atual da 
                                   ; "cabeça" (head pointer).
@@ -155,9 +164,9 @@ jmp start                         ; Salta para o ponto de entrada do programa.
 ; TRATATOR DE INTERRUPÇÃO DE RELÓGIO
 ;
 ;
-; Esta função está registrada na tabela de vetores de interrupção (IVT) para ser
+; Esta rotina está registrada na tabela de vetores de interrupção (IVT) para ser
 ; executada sempre que uma interrupção de relógio é lançada (INT 0x08). Sua função
-; é realizar a lógica do jogo e renderizar o gráfico na tela.
+; é realizar a lógica do jogo e atualizar o gráfico na tela.
 ;
 ; O estilo original de assembly do autor, por exemplo, usando "jz $+3", foi mantido,
 ; pois o código fica mais legível do que criando mais rótulos locais, apesar de
@@ -169,7 +178,7 @@ jmp start                         ; Salta para o ponto de entrada do programa.
 ;
 ;
 ; * Ciclo de relógio: A cada "toque" do relógio, que ocorre de 50 em 50 milissegundos
-;   (20 Hz), esta função é executada.
+;   (20 Hz), esta rotina é executada.
 ;
 ;
 ; * Nível de dificuldade: O jogo original foi alterado para que possa oferecer
@@ -311,7 +320,7 @@ jmp start                         ; Salta para o ponto de entrada do programa.
 ;
 ;
 ; Algumas variáveis também são necessárias para que o estado do jogo seja controlado. 
-; As principais  destas variáveis são os ponteiros, que assim como ponteiros em
+; As principais destas variáveis são os ponteiros, que assim como ponteiros em
 ; linguagens de alto nível, como C/C++, tem a função de apontar para endereços 
 ; de memória. No caso deste programa, os endereços de memória apontados são células
 ; do arranjo map, mais especificamente, offsets no segmento de dados extras apontado
@@ -347,6 +356,11 @@ jmp start                         ; Salta para o ponto de entrada do programa.
 ;     significativos de seu byte (nibble alto).
 ;
 ;
+;   * Se a cabeça da cobrinha colidiu com alguma parte de seu próprio corpo, bloqueia
+;     o jogo. Se a cobrinha devorou a fruta, incrementa o placar do jogo e aumenta
+;     o tamanho do seu corpo quando a fruta comida chegar à cauda.
+;
+;
 ;   * Move a cauda da cobrinha uma célula na direção definida nos bits mais 
 ;     significativos de seu byte (nibble alto).
 ;
@@ -355,12 +369,7 @@ jmp start                         ; Salta para o ponto de entrada do programa.
 ;     uma nova posição que está vazia.
 ;
 ;
-;   * Atualiza o mapa do jogo na tela.
-;
-;
-;   * Se a cabeça da cobrinha colidiu com alguma parte de seu próprio corpo, bloqueia
-;     o jogo. Se a cobrinha devorou a fruta, incrementa o placar do jogo e aumenta
-;     o tamanho do seu corpo quando a fruta comida chegar à cauda. 
+;   * Atualiza o mapa do jogo na tela. 
 ;
 ;
 ; Para entender como isso funciona, considere a seguinte configuração inicial do
@@ -532,7 +541,7 @@ jmp start                         ; Salta para o ponto de entrada do programa.
 ; vida gravado em fctr. A cada ciclo de instruções, fctr é declementado em uma 
 ; unidade.
 ;
-; Quando o tempo de vida da fruta chegar a zero, é executada a função random,
+; Quando o tempo de vida da fruta chegar a zero, é executada a rotina random,
 ; que sorteia uma nova posição pseudo-aleatória vazia para a mesma, e esta se 
 ; move para a nova posição, reiniciando a contagem.
 ;
@@ -564,7 +573,7 @@ jmp start                         ; Salta para o ponto de entrada do programa.
 ; recebe a cor vermelho. O que representa a fruta comida (EATEN) recebe a cor rosa.
 ; O que representa um ponto de colisão recebe a cor preta.
 ;
-; O vídeo foi configurado para o "modo VGA 13h" na função start, e todo cálculo 
+; O vídeo foi configurado para o "modo VGA 13h" na rotina start, e todo cálculo 
 ; realizado tem como base essa configuração. O "modo VGA 13h" define a resolução
 ; de tela como 320x200 pixels, cada pixel sendo representado por um único byte,
 ; permitindo a representação de 256 cores diferentes (2^8 = 256). Estas 256 cores
@@ -845,7 +854,7 @@ timer_handler:
 ; Move a cabeça da cobrinha uma célula para cima, para baixo, para a direita ou 
 ; para a esquerda, dependendo da direção do movimento que é lida da célula na 
 ; posição atual da cabeça em map (map(si)), que é atualizada sempre que uma tecla
-; de seta é pressionada (ver função keyboard_handler).
+; de seta é pressionada (ver rotina keyboard_handler).
 ;
 ; Ao obter a posição para onde a cabeça da cobrinha vai se mover, faz as seguintes
 ; verificações:
@@ -1043,7 +1052,7 @@ timer_handler:
 	mov map(bx), EMPTY            ; Apaga sua célula no mapa, marcando-a como vazia
 	                              ; (EMPTY).
 	
-	call random                   ; Chama a função random, para gerar um novo número
+	call random                   ; Chama a rotina random, para gerar um novo número
 	                              ; aleatório em AX, usando o valor atual como semente
 								  ; no processo.
 	
@@ -1635,7 +1644,7 @@ random:
 	mov rand, ax                  ; Atualiza a variável "rand" com o novo valor
 	                              ; gerado.
 
-	ret                           ; Retorna da função.	
+	ret                           ; Retorna o controle para o ponto de chamada.	
 
 
 
@@ -1705,7 +1714,7 @@ keyboard_handler:
 
 	cmp al, 0x01                  ; Verifica se a tecla pressionada é ESC.
 	
-	je power_off                  ; Se a tecla for ESC, salta para a função power_off,
+	je power_off                  ; Se a tecla for ESC, salta para a rotina power_off,
 	                              ; desligando o computador.
 
 .test_space_key:                  ; Testa a tecla ESPAÇO.
@@ -1979,7 +1988,7 @@ set_level:
 ; REINICIAR O JOGO
 ;
 ;
-; Ao executar esta função, reinicia o jogo. Isto fará com que todas as células
+; Ao executar esta rotina, reinicia o jogo. Isto fará com que todas as células
 ; do arranjo map recebam EMPTY. Também zera todas as variáveis, exceto rand (valor
 ; aleatório gerado), wcyc (ciclo de espera) e ftim (tempo de vida da fruta na 
 ; tela). Tais valores devem ser preservados para manter o status de temporização
@@ -2210,7 +2219,7 @@ print_score:
 ; IMPRIMIR AJUDA
 ;
 ;
-; Ao executar esta função, imprime o texto de ajuda com as instruções do jogo
+; Ao executar esta rotina, imprime o texto de ajuda com as instruções do jogo
 ; em modo 3h.
 ;
 ; =============================================================================
@@ -2233,7 +2242,7 @@ print_help:
 ; LIMPAR A TELA
 ;
 ;
-; Ao executar esta função, apaga todas as linhas do terminal.
+; Ao executar esta rotina, apaga todas as linhas do terminal.
 ;
 ; =============================================================================
 
@@ -2281,7 +2290,7 @@ clear_screen:
 ; DESLIGAR
 ;
 ;
-; Ao executar esta função, usa interrupções de APM para tentar desligar o 
+; Ao executar esta rotina, usa interrupções de APM para tentar desligar o 
 ; computador.
 ;
 ; =============================================================================
@@ -2433,7 +2442,7 @@ start:
 	;      IVT (INT 0x08) para apontar para a rotina timer_handler.
 	;
 	;   2. Sobrescreve a rotina de tratamento de interrupção do teclado na IVT
-	;      (INT 0x09) para apontar para a função keyboard_handler.
+	;      (INT 0x09) para apontar para a rotina keyboard_handler.
 	;
 	; Após a execução da instrução STI, as interrupções passarão a ser tratadas
 	; pelos tratadores atribuídos.
@@ -2482,7 +2491,7 @@ help_str:                         ; String instruções do jogo.
 
 	db ' Neste  est', 0xA0, 'gio, o kernel do sistema operacional seria  carregado  na  mem', 0xA2,'ria, '
 	db ' assumindo a responsabilidade por carregar os demais programas necess', 0xA0,'rios para '
-	db ' o funcionamento do mesmo.  Como n', 0x84, 'o h', 0xA0,' um sistema operacional, vou utilizar os '
+	db ' o funcionamento do mesmo.  Como n', 0x84, 'o h', 0xA0, ' um sistema operacional, vou utilizar os '
 	db ' recursos da sua m', 0xA0, 'quina para fazer uma ', 0xA3, 'nica coisa: Rodar o jogo da cobrinha!'
 	db 0x0D, 0x0A, 0x0D, 0x0A, ' Instru', 0x87, 0x94, 'es do jogo:'
 	db 0x0D, 0x0A, 0x0D, 0x0A, ' * Tecle as setas de dire', 0x87, 0x84, 'o para controlar a cobrinha.', 0x0D, 0x0A

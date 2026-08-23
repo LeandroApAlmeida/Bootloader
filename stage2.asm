@@ -13,7 +13,7 @@
 [BITS 16]                         ; O programa do Estágio 2 roda em modo real de
                                   ; 16 bits.
 								  
-[ORG 0x7E00]                      ; O programa será executado no endereço 0x07E00.
+[ORG 0x7E00]                      ; O programa será carregado no endereço 0x07E00.
 
 
 
@@ -249,7 +249,7 @@ start:
     mov bh, 0x07                  ; Define o atributo do fundo (cor de texto e
 	                              ; cor de fundo).
 								  
-    mov cx, 0                     ; Define a posição inicial (linha 0, coluna 0).
+    mov cx, 0x0000                ; Define a posição inicial (linha 0, coluna 0).
 	
     mov dh, 24                    ; Define a linha final da área a ser limpa.
 	
@@ -394,7 +394,7 @@ show_menu:
 ; EXECUTAR O SISTEMA OPERACIONAL
 ;
 ;
-; Ao executar este bloco, simula o carregamento do Sistema Operacional na memória.
+; Ao executar esta rotina, simula o carregamento do Sistema Operacional na memória.
 ; Como não há um sistema operacional real, será carregado o jogo da cobrinha. 
 ;
 ; =============================================================================
@@ -498,7 +498,7 @@ show_option:
 ; DESLIGAR
 ;
 ;
-; Ao executar esta função, usa interrupções de APM para tentar desligar o 
+; Ao executar esta rotina, usa interrupções de APM para tentar desligar o 
 ; computador.
 ;
 ; =============================================================================
@@ -552,7 +552,7 @@ power_off:
 ;   * DL: O valor de DL define o código do drive de boot.
 ;
 ;   * BX: O valor de BX define o endereço da memória em que será carregado o 
-;     estágio 3. No caso, o terceiro estágio será carregado no endereço 0x8200.
+;     Estágio 3. No caso, o terceiro estágio será carregado no endereço 0x8200.
 ;
 ; Definidos os valores de execução da interrupção 0x13, esta é chamada, causando
 ; o carregamento do terceiro estágio na memória pelo BIOS. Não há loop se houver

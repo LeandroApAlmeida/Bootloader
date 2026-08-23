@@ -33,7 +33,7 @@
 [BITS 16]                         ; O programa do Estágio 1 roda em modo real 
                                   ; de 16 bits.
 								  
-[ORG 0x7C00]                      ; O programa será executado no endereço padrão
+[ORG 0x7C00]                      ; O programa será carregado no endereço padrão
                                   ; 0x7C00.
 
 
@@ -129,14 +129,14 @@ nop
 ;
 ; O programa lido pelo BIOS no setor MBR do disco e carregado no endereço 0x7C00
 ; da memória será este primeiro estágio do bootloader. As primeiras instruções
-; executadas quando o controle do computador for entregue para ele serão as desta
+; executadas quando o controle do programa for entregue para ele serão as desta
 ; rotina, que como vimos, configura a pilha do bootloader e o hardware.
 ;
 ; O endereço de memória do segmento de pilha, apontado pelo registrador de segmento
 ; SS, será o 0x9000. Este endereço não foi escolhido ao acaso. Ele foi calculado
 ; para a pilha ocupar o espaço contíguo de memória logo adiante do segmento de dados
 ; extras usado pelo Estágio 3, que contém o mapa do jogo da cobrinha e outras 
-; variáveis de controle. Uma única pilha será compatilhada pelos três estágios,
+; variáveis de controle. Uma única pilha será compartilhada pelos três estágios,
 ; mas não será acessada concorrentemente. Cada estágio a acessa em seu turno.
 ;
 ; Para entender como o endereço da pilha foi calculado, veja no diagrama abaixo
@@ -188,7 +188,7 @@ nop
 ;   Stage 1 (Estágio 1)
 ;
 ;   O Estágio 1, com 512 bytes, lido pelo BIOS do setor MBR do disco (setor de
-;   boot), ocupa os endereços de memória de 0x7C00 até 0x7DFF. É função do estágio
+;   boot), ocupa os endereços de memória de 0x7C00 até 0x7DFF. É função do Estágio
 ;   1 configurar o hardware e carregar na memória o Estágio 2.
 ;
 ;   Stage 2 (Estágio 2)
@@ -212,7 +212,7 @@ nop
 ;
 ;   Stack (Pilha do bootloader)
 ;
-;   A pilha será posicionada logo adiante do mapa do jogo da  cobrinha, iniciando
+;   A pilha será posicionada logo adiante do mapa do jogo da cobrinha, iniciando
 ;   no endereço 0x9000 e ocupando 65536 bytes. 
 ;
 ;
@@ -372,7 +372,7 @@ start:
 	                              ; (reset do disco).
 								  
 	int 0x13                      ; Chama a interrupção de disco do BIOS para 
-	                              ; reset dos controladores de disco.
+	                              ; reset dos controladores.
 								  
 	jc disk_error                 ; Se a flag de carry (CF) estiver definida 
 	                              ; como 1, salta para o tratador de erro.
@@ -398,13 +398,12 @@ start:
 	out 0x40, al                  ; Envia o byte mais significativo em AH.
 
 	; -------------------------------------------------------------------------
-	; Configura o modo de vídeo para modo texto 80x25 (80 colunasx25 linhas).
+	; Configura o modo de vídeo para o modo VGA 3h (80 colunas x 25 linhas).
 	; -------------------------------------------------------------------------
 
 	mov ah, 0x00                  ; Define a função 0 da interrupção de vídeo.
 	
-    mov al, 0x03                  ; Define o modo de vídeo como modo texto 80x25
-	                              ; (modo 3h).
+    mov al, 0x03                  ; Define o modo de vídeo como modo VGA 3h.
 	
     int 0x10                      ; Chama a interrupção do BIOS que configura o 
 	                              ; modo de vídeo.
@@ -516,8 +515,7 @@ disk_error:
 	
 	call wait_enter               ; Aguarda teclar ENTER para continuar.
 								  
-	call shutdown                 ; Chama a função para desligar o computador via
-	                              ; APM.
+	call shutdown                 ; Chama a rotina para desligar o computador.
 
 
 

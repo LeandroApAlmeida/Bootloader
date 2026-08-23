@@ -1,10 +1,11 @@
 ; =============================================================================
 ;
-; IMPRESSÃO DE STRING NO TERMINAL
+; IMPRESSÃO DE STRING NA POSIÇÃO DO CURSOR
 ;
 ;
-; Ao executar esta função, imprime uma string no terminal, caractere por caractere,
-; até encontrar o byte nulo 0x00, que denota o final da string.
+; Ao executar esta função, imprime uma string no terminal, na posição atual do
+; cursor, caractere por caractere, até encontrar o byte nulo 0x00, que denota o 
+; final da string.
 ;
 ; =============================================================================
 	
@@ -12,7 +13,7 @@
 print_string:
 
     mov ah, 0x0E                  ; Define a função 0x0E da interrupção de vídeo 
-	                              ; (exibir caractere).
+	                              ; do BIOS (exibir caractere).
 								  
 	mov bl, 0x07                  ; Define as cores de fonte e fundo (fundo preto, 
 	                              ; texto branco).
@@ -48,9 +49,8 @@ print_string:
 ;
 ; Como estou usando funções de APM (Advanced Power Management) para desligar o
 ; computador em Modo Real, em hardware real não iria funcionar nas máquinas pós 
-; anos 1990/2000. Porém no QEMU ela funciona. Então, no caso de uma eventual falha 
-; no carregamento do kernel pelo QEMU, permite o desligamento da máquina virtual 
-; só pressionando a tecla ENTER.
+; anos 1990/2000. Porém na máquina virtual QEMU, utilizada para os testes, ela 
+; ainda funciona.
 ;
 ; =============================================================================
 
