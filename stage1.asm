@@ -5,7 +5,7 @@
 ; Este código em assembly implementa o Estágio 1 do bootloader, que será gravado
 ; no setor MBR (Master Boot Record) do disco de boot. O Estágio 1 carregará na 
 ; memória o Estágio 2, que é o programa que exibe o menu do sistema operacional 
-; FAKENIX e que carrega o Estágio 3, que é o kernel fictício do jogo da cobrinha.
+; Fakenix e que carrega o Estágio 3, que é o kernel fictício do jogo da cobrinha.
 ;
 ; Este é um projeto básico, que tem como objetivo única e exclusivamente demonstrar
 ; como o hardware e o software se comunicam no baixo nível para "dar vida" ao 
@@ -43,7 +43,10 @@
 ;
 ; Se se interessou pelo tema assembly e aspectos da programação em baixo nível, 
 ; recomendo ainda que analise um sistema operacional construído inteiramente nesta
-; linguagem. Trata-se do MinuetOS, disponível na página https://www.menuetos.net/.
+; linguagem. Trata-se do MinuetOS, disponível na página:
+;
+;
+; https://www.menuetos.net/
 ;
 ; ═════════════════════════════════════════════════════════════════════════════
 
@@ -65,9 +68,9 @@
 ; Instrução de salto, para manter o alinhamento das instruções no MBR. Na sequência
 ; a estas instruções seriam declarados os campos do BPB/EPBP. Nesta imagem de disco
 ; NÃO devem ser declarados estes campos, pois é uma imagem RAW, sem estrutura de
-; sistema de arquivos definida (FAT-12, FAT-16, FAT-32, etc). Declarar estes campos
-; causaria a leitura incorreta da imagem e falha. Sem declará-los, o BIOs vai tratar
-; a imagem de modo default.
+; sistema de arquivos definida (FAT-12, FAT-16, FAT-32, ext1, ext2, etc). Declarar 
+; estes campos causaria a leitura incorreta da imagem e falha. Sem declará-los, 
+; o BIOs vai tratar a imagem de modo default.
 ;
 ; =============================================================================
 
@@ -92,6 +95,7 @@ nop
 ;
 ;
 ;                               Memory (RAM)
+;
 ;                    │                                  │
 ;                    │                                  │
 ;                    │ Free                             │
@@ -151,7 +155,7 @@ nop
 ; para a pilha ocupar o espaço contíguo de memória logo adiante do segmento de dados
 ; extras usado pelo Estágio 3, que contém o mapa do jogo da cobrinha e outras 
 ; variáveis de controle. Uma única pilha será compartilhada pelos três estágios,
-; mas não será acessada concorrentemente. Cada estágio a acessa em seu turno.
+; mas não será acessada concorrentemente. Cada estágio acessa em seu turno.
 ;
 ; Para entender como o endereço da pilha foi calculado, veja no diagrama abaixo
 ; como a memória será alocada pelo bootloader quando os três estágios estiverem
@@ -199,32 +203,32 @@ nop
 ;
 ;   A memória alocada para o bootloader estará dividida nas seguintes seções:
 ;     
-;   Stage 1 (Estágio 1)
+;   STAGE 1 (Estágio 1)
 ;
 ;   O Estágio 1, com 512 bytes, lido pelo BIOS do setor MBR do disco (setor de
-;   boot), ocupa os endereços de memória de 0x7C00 até 0x7DFF. É função do Estágio
-;   1 configurar o hardware e carregar na memória o Estágio 2.
+;   boot), ocupa os endereços de memória de 0x7C00 até 0x7DFF. É função do Estágio 1
+;   configurar o hardware e carregar na memória o Estágio 2.
 ;
-;   Stage 2 (Estágio 2)
+;   STAGE 2 (Estágio 2)
 ;
 ;   O Estágio 2, com 1024 bytes, ocupa os endereços de memória de 0x7E00 até 0x81FF.
 ;   Ele corresponde ao menu do sistema operacional Fakenix. Sua função é carregar
 ;   o Estágio 3, que num sistema prático, carregaria o Kernel do sistema operacional
 ;   na memória.
 ;
-;   Stage 3 (Estágio 3)
+;   STAGE 3 (Estágio 3)
 ;
 ;   O Estágio 3, com 2048 bytes, ocupa os endereços de 0x8200 até 0x89FF. Este
 ;   estágio, num sistema prático, seria o programa que carregaria o kernel do
 ;   sistema operacional na memória. Como não existe um sistema operacional, será
 ;   carregado o jogo da cobrinha, em modo real.
 ;
-;   Map (Mapa do jogo da cobrinha)
+;   MAP (Mapa do jogo da cobrinha)
 ;
 ;   O Estágio 3 alocará ainda os endereços de 0x8A00 até 0x8FFF, o que equivale
 ;   a 1536 bytes, para o mapa do jogo da cobrinha e variáveis de controle. 
 ;
-;   Stack (Pilha do bootloader)
+;   STACK (Pilha do bootloader)
 ;
 ;   A pilha será posicionada logo adiante do mapa do jogo da cobrinha, iniciando
 ;   no endereço 0x9000 e ocupando 65536 bytes. 
@@ -377,7 +381,9 @@ start:
 	                              ; da pilha (offset 0xFFFF).
 	
 	; -------------------------------------------------------------------------
-	; Faz o reset do disco, preparando-o para a leitura do segundo estágio.
+	; Faz o reset do disco, preparando-o para a leitura do segundo estágio. Isso
+	; ajuda a evitar a ocorrência de erros na leitura do disco ao carregar o
+	; segundo estágio.
 	; -------------------------------------------------------------------------
 	
 	mov dl, [drive_number]        ; Copia o código do drive de boot em DL.
@@ -405,11 +411,13 @@ start:
 	mov ax, 59659                 ; Define o divisor para obter exatos 50 ms 
 	                              ; (1.193.180 pulsos segundo / 59.659 = 20 Hz).
 								  
-	out 0x40, al                  ; Envia o byte menos significativo em AL.
+	out 0x40, al                  ; Envia o byte menos significativo em AL para
+	                              ; a porta 40h.
 	
 	mov al, ah                    ; Copia AH em AL.
 	
-	out 0x40, al                  ; Envia o byte mais significativo em AH.
+	out 0x40, al                  ; Envia o byte mais significativo em AH para
+	                              ; a porta 40h.
 
 	; -------------------------------------------------------------------------
 	; Configura o modo de vídeo para o modo VGA 3h (80 colunas x 25 linhas, 
@@ -441,26 +449,34 @@ start:
 ; Para carregar o Estágio 2 via CHS (Cylinder-Head-Sector), será executada a
 ; interrupção de disco 0x13 do BIOS, que precisa de alguns parâmetros definidos:
 ;
+;
 ;   * AH: O valor de AH define qual operação de disco será realizada. O valor 0x02
 ;     corresponde a leitura do disco.
+;
 ;
 ;   * AL: O valor de AL define quantos setores do disco devem ser carregados para
 ;     a memória. Como o segundo estágio tem 1024 bytes, e o tamanho default do setor 
 ;     é de 512 bytes, o valor de AL deve ser 2.
 ;
+;
 ;   * CH: O valor de CH define o cilindo do disco (no caso, será o cilindro 0).
+;
 ;
 ;   * CL: O valor de CL define o setor do disco a partir do qual se inicia a leitura.
 ;     No caso, o setor será o 2, já que o setor 1 é o código deste primeiro estágio
 ;     no MBR.
 ;
+;
 ;   * DH: O valor de DH define a cabeça de leitura do disco (no caso, será a cabeça
 ;     0).
 ;
+;
 ;   * DL: O valor de DL define o código do drive de boot.
+;
 ;
 ;   * BX: O valor de BX define o endereço da memória em que será carregado o estágio
 ;     2. No caso, o segundo estágio será carregado no endereço 0x7E00.
+;
 ;
 ; Definidos os valores de execução da interrupção 0x13, esta é chamada, causando
 ; o carregamento do segundo estágio na memória pelo BIOS.

@@ -370,6 +370,17 @@ power_off:
 	
 load_stage3:
 	
+	mov dl, [drive_number]        ; Copia o código do drive de boot em DL.
+	
+	xor ax, ax                    ; Define a função 0 da interrupção de disco 
+	                              ; do BIOS (reset do disco).
+								  
+	int 0x13                      ; Chama a interrupção de disco do BIOS para 
+	                              ; reset dos controladores.
+								  
+	jc disk_error                 ; Se a flag de carry (CF) estiver definida 
+	                              ; como 1, salta para o tratador de erro.
+	
 	call delay                    ; Simula um tempo de processamento para o 
 	call delay                    ; carregamento do Estágio 3.
 	call delay                    ; ...

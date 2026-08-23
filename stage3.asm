@@ -17,7 +17,7 @@
 ; Uma cópia deste código-fonte original se encontra em "Bootloader\extra\snake.asm".
 ;
 ; No mesmo subdiretório se encontra uma versão do jogo da cobrinha em linguagem
-; C que eu mesmo desenvolvi, em "Bootloader\extra\snake-c\snake.c". 
+; C que eu mesmo desenvolvi, "Bootloader\extra\snake-c\snake.c". 
 ;
 ; ═════════════════════════════════════════════════════════════════════════════
 
@@ -91,7 +91,11 @@
 ; contraste.
 ;
 ; Para ver a paleta completa de cores com seus respectivos índices, você pode 
-; acessar o site https://www.fountainware.com/EXPL/vga_color_palettes.htm.
+; acessar o site:
+;
+;
+; https://www.fountainware.com/EXPL/vga_color_palettes.htm
+;
 ;
 ; =============================================================================
 
@@ -174,7 +178,8 @@ start:
 	                              ; configurar o programa.
 
 	; -------------------------------------------------------------------------
-	; Configura os registradores de segmentos que vão ser usados pelo programa.
+	; Configura a pilha e os registradores de segmentos que vão ser usados pelo 
+	; programa.
 	; -------------------------------------------------------------------------
 
 	mov sp, 0xFFFF                ; Move o ponteiro para o topo da pilha.
@@ -188,8 +193,8 @@ start:
 	
 	mov ax, 0xA000                ; Copia o valor 0xA000 para o registrador AX.
 								  
-	mov gs, ax                    ; Define a base do segmento de vídeo em GS, no 
-	                              ; modo "VGA 13h", que por padrão é 0xA0000.
+	mov gs, ax                    ; Define a base do segmento de vídeo em GS. No 
+	                              ; modo "VGA 13h", por padrão é 0xA0000.
 	
 	mov ax, 0x0000                ; Copia o valor 0x0000 para o registrador AX.
 								  
@@ -220,7 +225,7 @@ start:
 
 	mov temp, 2                   ; Define o nível de dificuldade como 2.
 								  
-	call set_level                ; Aplica o nível de dificuldade.
+	call set_level                ; Aplica o nível de dificuldade definido.
 
 	; -------------------------------------------------------------------------
 	; Obtém a semente inicial para a geração de números pseudo-aleatórios. No 

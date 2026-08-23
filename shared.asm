@@ -15,8 +15,8 @@
 ;
 ;
 ; A diretiva %include do pré-processador NASM funciona como um "copiar e colar" 
-; no código. Ele pega o código-fonte deste módulo e insere no ponto exato onde
-; ela está sendo declarada no código-fonte do estágio.
+; no código. Ela pega o código-fonte deste módulo e insere no ponto exato onde
+; está sendo declarada no código-fonte do estágio.
 ;
 ; ═════════════════════════════════════════════════════════════════════════════
 
@@ -73,8 +73,8 @@ print_string:
 ;
 ;
 ; Em Modo Real não é possível ter acesso à ACPI para desligar o computador, por
-; limitações no acesso à memória do computador. Dessa forma, uso funções de APM 
-; (Advanced Power Management) para tentar o desligamento.
+; causa de limitações no acesso à memória do computador. Dessa forma, uso funções
+; de APM (Advanced Power Management) para tentar o desligamento.
 ;
 ; Em hardware real estas funções não irão funcionar nas máquinas pós anos 
 ; 1990/2000. Ainda assim utilizo, pois a máquina virtual Qemu onde os testes são
@@ -90,9 +90,7 @@ shutdown:
 	cli                           ; Interrompe as interrupções mascaráveis para
 	                              ; configurar o programa.
 
-                                  ; -------------------------------------------
-                                  ; 1. Verifica se APM está presente
-								  ; -------------------------------------------
+.check_apm:                       ; 1. VERIFICA DE A APM ESTÁ PRESENTE:
 
     mov ax, 0x5300                ; Define a função 0x5300, que é usada para 
 	                              ; detectar a presença do APM.
@@ -105,9 +103,7 @@ shutdown:
     jc .apm_not_present           ; Se a APM não está presente no sistema, salta
 	                              ; para .apm_not_present.
 
-                                  ; -------------------------------------------
-                                  ; 2. Conecta-se à interface APM
-								  ; -------------------------------------------
+.connect_apm:                     ; 2. CONECTA-SE À INTERFACE APM:
 
     mov ax, 0x5301                ; Define a função 0x5301, que é usada para 
 	                              ; conectar-se ao APM.
@@ -115,14 +111,12 @@ shutdown:
     xor bx, bx                    ; Zera o valor de BX.
 	
     int 0x15                      ; Chama a interrupção 0x15, para realizar a 
-	                              ; conexão ao APM.
+	                              ; conexão a APM.
 								  
     jc .apm_connection_failed     ; Se não se conectou com a APM, salta para 
 	                              ; .apm_connection_failed.
 
-                                  ; -------------------------------------------
-                                  ; 3. Desliga o computador
-								  ; -------------------------------------------
+.power_off:                       ; 3. DESLIGA O COMPUTADOR:
 
     mov ax, 0x5307                ; Define a função APM_SET_POWER_STATE, que altera
                                   ; o estado de energia do dispositivo.
@@ -139,7 +133,7 @@ shutdown:
     jmp .failed_shutdown          ; Se o desligamento não foi bem-sucedido, salta
 	                              ; para .failed_shutdown.
 
-.apm_not_present:
+.apm_not_present:                 ; ERRO: APM NÃO ESTÁ PRESENTE.
 
     mov si, apm_not_found_str     ; Copia o endereço de memória da string apm_not_found_str
 	                              ; para SI.
@@ -148,7 +142,7 @@ shutdown:
 	
     jmp .hang                     ; Salta para .hang.
 
-.apm_connection_failed:
+.apm_connection_failed:           ; ERRO: NÃO SE CONECTOU COM A APM.
 
     mov si, apm_conn_fail_str     ; Copia o endereço de memória da string apm_conn_fail_str
 	                              ; para SI.
@@ -157,7 +151,7 @@ shutdown:
 	
     jmp .hang                     ; Salta para .hang.
 
-.failed_shutdown:
+.failed_shutdown:                 ; ERRO: NÃO DESLIGOU O COMPUTADOR.
 
     mov si, shutdown_fail_str     ; Copia o endereço de memória da string shutdown_fail_str
 	                              ; para SI.
@@ -166,12 +160,7 @@ shutdown:
 	
     jmp .hang                     ; Salta para .hang.
 
-.hang:
-    
-	                              ; -------------------------------------------
-	                              ; Loop infinito para evitar reinicialização ou 
-								  ; comportamento indesejado.
-								  ; -------------------------------------------
+.hang:                            ; Loop infinito
     
 	hlt                           ; Entra em modo de baixa energia.
 	                              
