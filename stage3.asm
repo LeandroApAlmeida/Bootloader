@@ -1384,11 +1384,11 @@ timer_handler:
 
 ; =============================================================================
 ;
-; CÁLCULAR ÍNDICE LINEAR PARA A PRÓXIMA POSIÇÃO DA CABEÇA/CAUDA
+; MOVIMENTO
 ;
 ;
 ; Ao executar esta rotina, realiza as seguintes ações para calcular o novo
-; índice linear da cabeça/cauda da cobrinha no mapa:
+; índice linear onde a cabeça/cauda da cobrinha se movimentará no mapa:
 ; 
 ;
 ;   1. Copia o byte da célula da cabeça/cauda da cobrinha para CL.
@@ -1591,7 +1591,7 @@ movement:
 
 ; =============================================================================
 ;
-; GERAR NÚMERO PSEUDO-ALEATÓRIO
+; NÚMERO PSEUDO-ALEATÓRIO
 ;
 ;
 ; Ao executar esta rotina, gera um número pseudo-aleatório baseado na técnica 
@@ -2022,7 +2022,7 @@ restart_game:
 
 ; =============================================================================
 ;
-; IMPRIMIR PLACAR DO JOGO EM MODO TEXTO
+; IMPRIMIR PONTUAÇÃO
 ;
 ;
 ; Ao executar esta rotina, imprime o placar do jogo nas linhas acima do gráfico
@@ -2207,7 +2207,7 @@ print_score:
 
 ; =============================================================================
 ;
-; IMPRIMIR AS INSTRUÇÕES
+; IMPRIMIR AJUDA
 ;
 ;
 ; Ao executar esta função, imprime o texto de ajuda com as instruções do jogo
@@ -2230,7 +2230,7 @@ print_help:
 
 ; =============================================================================
 ;
-; LIMPAR O TERMINAL
+; LIMPAR A TELA
 ;
 ;
 ; Ao executar esta função, apaga todas as linhas do terminal.

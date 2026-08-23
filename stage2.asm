@@ -391,7 +391,7 @@ show_menu:
 
 ; =============================================================================
 ;
-; RODAR O SISTEMA OPERACIONAL
+; EXECUTAR O SISTEMA OPERACIONAL
 ;
 ;
 ; Ao executar este bloco, simula o carregamento do Sistema Operacional na memória.
@@ -564,7 +564,7 @@ power_off:
 load_stage3:
 	
 	call delay                    ; Simula um tempo de processamento para o 
-	call delay                    ; carregamento do estágio 3.
+	call delay                    ; carregamento do Estágio 3.
 	call delay                    ; ...
 	call delay                    ; ...
 	call delay                    ; ...
