@@ -15,198 +15,6 @@
 								  
 [ORG 0x7E00]                      ; O programa será carregado no endereço 0x07E00.
 
-
-
-
-jmp start                         ; Salta para o ponto de entrada do programa.
-
-
-
-
-; =============================================================================
-;
-; IMPRIMIR MENU
-;
-;
-; Ao executar esta rotina, imprime o menu do bootloader. Ao imprimir o menu, 
-; verifica se o valor em [opt] é zero. Esta variável tem salvo nela a tecla que
-; foi pressionada no teclado.
-; 
-; Se [opt] é zero (0x00), significa que não foi pressionada qualquer tecla de 
-; menu. Neste caso, imprime apenas as opções do menu. Se [opt] é diferente de 
-; zero, significa que foi pressionada a tecla 1, 2, 3 ou 4, correspondendo a uma
-; das opções do menu. Neste caso, imprime o número da tecla pressionada que está
-; em [opt] na frente do texto "Escolha uma opção: ".
-;
-; =============================================================================
-
-
-print_menu:
-    
-	mov si, menu_str              ; Copia o endereço de memória da string menu_str
-	                              ; para SI.
-								  
-    call print_string             ; Imprime a string menu_str.
-	
-	cmp byte [opt], 0x00          ; Compara o valor em [opt] com 0x00.
-	
-	je .done                      ; Se o valor em [opt] for 0x00, não há a opção 
-	                              ; digitada pelo usuário e salta para .done.
-								  
-	mov ah, 0x0E                  ; Define a função 0x0E da interrupção de vídeo 
-	                              ; do BIOS (exibir caractere).
-								  
-    mov al, byte [opt]            ; Copia o caractere salvo em [opt] para AL.
-	
-	int 0x10                      ; Chama a interrupção para imprimir o caractere
-	                              ; armazenado em AL no terminal.
-
-.done:
-	
-	ret                           ; Retorna o controle para o ponto de chamada.
-
-
-
-
-; =============================================================================
-;
-; PULAR UMA LINHA
-;
-;
-; Ao executar esta rotina, salta uma linha no terminal (equivalente a usar "\n\n" 
-; em linguagens de programação de alto nível).
-;
-; =============================================================================
-
-
-skip_a_line:
-
-	mov si, line_str              ; Copia o endereço de memória da string line_str
-	                              ; para SI.
-								  
-    call print_string             ; Imprime a string line_str.
-
-	ret                           ; Retorna o controle para o ponto de chamada.
-
-
-
-
-; =============================================================================
-;
-; LIMPAR A TELA
-;
-;
-; Ao executar esta rotina, apaga todas as linhas a partir da linha número 4. As
-; linhas de 0 a 3 não são apagadas porque fazem parte do cabeçalho do bootloader,
-; que é preservado a cada atualização de tela.
-;
-; =============================================================================
-
-
-clear_screen:
-    
-	mov ah, 0x06                  ; Define a função 6 da interrupção de vídeo 
-	                              ; do BIOS (rolagem de tela).
-								  
-    mov al, 0x00                  ; Rola toda a tela (valor 0 significa limpar).
-	
-    mov bh, 0x07                  ; Define o atributo do fundo (cor de texto e cor 
-	                              ; de fundo).
-								  
-    mov cx, 0x0400                ; Define a posição inicial (linha 4, coluna 0).
-	
-    mov dh, 24                    ; Define a linha final da área a ser limpa.
-	
-    mov dl, 79                    ; Define a coluna final da área a ser limpa.
-	
-    int 0x10                      ; Chama a interrupção para executar a limpeza
-	                              ; do terminal.
-
-.reset_cursor:
-
-    mov ah, 0x02                  ; Define a função 2 da interrupção de vídeo
-	                              ; do BIOS (mover cursor).
-								  
-    mov bh, 0x00                  ; Seleciona a página de vídeo (padrão, página
-	                              ; 0).
-								  
-    mov dh, 0x04                  ; Define a linha do cursor (linha 4).
-	
-    mov dl, 0x00                  ; Define a coluna do cursor (coluna 0).
-	
-    int 0x10                      ; Chama a interrupção para mover o cursor para
-	                              ; a coordenada (4,0).
-    
-	ret                           ; Retorna o controle para o ponto de chamada.
-	
-	
-	
-	
-; =============================================================================
-;
-; ATRASO
-;
-;
-; Ao executar esta rotina, bloqueia o programa pelo tempo de 1 segundo. Funciona
-; verificando se o tempo passado desde a entrada na rotina equivale ao número de
-; 20 ticks do PIT, configurado para emitir um tick a cada 50 ms (20 x 50 = 1000 ms)
-; na rotina start do Estágio 1.
-;
-; =============================================================================
-
-
-delay:
-
-	cli                           ; Interrompe as interrupções mascaráveis.
-    
-	mov ah, 0x00                  ; Define a função 0 da interrupção de relógio 
-	                              ; do BIOS (lê o tempo atual do sistema).
-								  
-	int 0x1A                      ; Chama a interrupção que retorna o tempo atual
-	                              ; nos registradores CX e DX.
-								  
-	mov bx, dx                    ; Copia o valor de DX em BX, para comparação
-	                              ; posterior.
-
-.wait_loop:
-
-	mov ah, 0x00                  ; Define a função 0 da interrupção de relógio
-	                              ; do BIOS (lê o tempo atual do sistema).
-								  
-	int 0x1A                      ; Chama a interrupção que retorna o tempo atual
-	                              ; nos registradores CX e DX.
-								  
-	sub dx, bx                    ; Subtrai o valor armazenado no registrador BX
-	                              ; do valor atual em DX.
-								  
-	cmp dx, 20                    ; Calcula se o número de ticks é igual a 20, 
-	                              ; que corresponde a 1 segundo.
-								  
-	jl .wait_loop                 ; Se não atingiu o número de 20 ticks, retorna
-	                              ; ao loop novamente.
-
-	sti                           ; Retoma as interrupções mascaráveis.
-
-	ret                           ; Retorna o controle para o ponto de chamada.
-
-
-
-
-; =============================================================================
-;
-; IMPORTAÇÃO DE CÓDIGO COMPARTILHADO
-;
-;
-; Importa rotinas compartilhadas pelos 3 estágios do bootloader do arquivo de 
-; código-fonte "shared.asm".
-;
-; =============================================================================
-
-
-imports:
-	
-	%include "shared.asm"
-	
 	
 	
 
@@ -216,8 +24,7 @@ imports:
 ;
 ;
 ; A execução deste estágio inicia nesta rotina. A rotina faz o reset da pilha,
-; no mesmo endereço configurado pelo Estágio 1, e imprime na tela o cabeçalho 
-; e menu.
+; no mesmo endereço configurado pelo Estágio 1, e imprime o cabeçalho.
 ;
 ; =============================================================================
 
@@ -238,7 +45,7 @@ start:
 	                              ; topo da pilha (offset 0xFFFF).
 	
 	; -------------------------------------------------------------------------
-	; Limpa a tela completamente e coloca o cursor em (0,0).
+	; Limpa o terminal completamente e coloca o cursor em (0,0).
 	; -------------------------------------------------------------------------
 	
 	mov ah, 0x06                  ; Define a função 6 da interrupção de vídeo 
@@ -598,10 +405,179 @@ load_stage3:
 								  
 	jmp 0x0000:0x8200             ; Entrega o controle do programa para o 
 	                              ; Estágio 3 (far jump).
+	
+	
+	
+	
+; =============================================================================
+;
+; IMPRIMIR MENU
+;
+;
+; Ao executar esta rotina, imprime o menu do bootloader. Ao imprimir o menu, 
+; verifica se o valor em [opt] é zero. Esta variável tem salvo nela a tecla que
+; foi pressionada no teclado.
+; 
+; Se [opt] é zero (0x00), significa que não foi pressionada qualquer tecla de 
+; menu. Neste caso, imprime apenas as opções do menu. Se [opt] é diferente de 
+; zero, significa que foi pressionada a tecla 1, 2, 3 ou 4, correspondendo a uma
+; das opções do menu. Neste caso, imprime o número da tecla pressionada que está
+; em [opt] na frente do texto "Escolha uma opção: ".
+;
+; =============================================================================
+
+
+print_menu:
+    
+	mov si, menu_str              ; Copia o endereço de memória da string menu_str
+	                              ; para SI.
+								  
+    call print_string             ; Imprime a string menu_str.
+	
+	cmp byte [opt], 0x00          ; Compara o valor em [opt] com 0x00.
+	
+	je .done                      ; Se o valor em [opt] for 0x00, não há a opção 
+	                              ; digitada pelo usuário e salta para .done.
+								  
+	mov ah, 0x0E                  ; Define a função 0x0E da interrupção de vídeo 
+	                              ; do BIOS (exibir caractere).
+								  
+    mov al, byte [opt]            ; Copia o caractere salvo em [opt] para AL.
+	
+	int 0x10                      ; Chama a interrupção para imprimir o caractere
+	                              ; armazenado em AL no terminal.
+
+.done:
+	
+	ret                           ; Retorna o controle para o ponto de chamada.
 
 
 
 
+; =============================================================================
+;
+; PULAR UMA LINHA
+;
+;
+; Ao executar esta rotina, salta uma linha no terminal (equivalente a usar "\n\n" 
+; em linguagens de programação de alto nível).
+;
+; =============================================================================
+
+
+skip_a_line:
+
+	mov si, line_str              ; Copia o endereço de memória da string line_str
+	                              ; para SI.
+								  
+    call print_string             ; Imprime a string line_str.
+
+	ret                           ; Retorna o controle para o ponto de chamada.
+
+
+
+
+; =============================================================================
+;
+; LIMPAR A TELA
+;
+;
+; Ao executar esta rotina, apaga todas as linhas a partir da linha número 4. As
+; linhas de 0 a 3 não são apagadas porque fazem parte do cabeçalho do bootloader,
+; que é preservado a cada atualização de tela.
+;
+; =============================================================================
+
+
+clear_screen:
+    
+	mov ah, 0x06                  ; Define a função 6 da interrupção de vídeo 
+	                              ; do BIOS (rolagem de tela).
+								  
+    mov al, 0x00                  ; Rola toda a tela (valor 0 significa limpar).
+	
+    mov bh, 0x07                  ; Define o atributo do fundo (cor de texto e cor 
+	                              ; de fundo).
+								  
+    mov cx, 0x0400                ; Define a posição inicial (linha 4, coluna 0).
+	
+    mov dh, 24                    ; Define a linha final da área a ser limpa.
+	
+    mov dl, 79                    ; Define a coluna final da área a ser limpa.
+	
+    int 0x10                      ; Chama a interrupção para executar a limpeza
+	                              ; do terminal.
+
+.reset_cursor:
+
+    mov ah, 0x02                  ; Define a função 2 da interrupção de vídeo
+	                              ; do BIOS (mover cursor).
+								  
+    mov bh, 0x00                  ; Seleciona a página de vídeo (padrão, página
+	                              ; 0).
+								  
+    mov dh, 0x04                  ; Define a linha do cursor (linha 4).
+	
+    mov dl, 0x00                  ; Define a coluna do cursor (coluna 0).
+	
+    int 0x10                      ; Chama a interrupção para mover o cursor para
+	                              ; a coordenada (4,0).
+    
+	ret                           ; Retorna o controle para o ponto de chamada.
+	
+	
+	
+	
+; =============================================================================
+;
+; ATRASO
+;
+;
+; Ao executar esta rotina, bloqueia o programa pelo tempo de 1 segundo. Funciona
+; verificando se o tempo passado desde a entrada na rotina equivale ao número de
+; 20 ticks do PIT, configurado para emitir um tick a cada 50 ms (20 x 50 = 1000 ms)
+; na rotina start do Estágio 1.
+;
+; =============================================================================
+
+
+delay:
+
+	cli                           ; Interrompe as interrupções mascaráveis.
+    
+	mov ah, 0x00                  ; Define a função 0 da interrupção de relógio 
+	                              ; do BIOS (lê o tempo atual do sistema).
+								  
+	int 0x1A                      ; Chama a interrupção que retorna o tempo atual
+	                              ; nos registradores CX e DX.
+								  
+	mov bx, dx                    ; Copia o valor de DX em BX, para comparação
+	                              ; posterior.
+
+.wait_loop:
+
+	mov ah, 0x00                  ; Define a função 0 da interrupção de relógio
+	                              ; do BIOS (lê o tempo atual do sistema).
+								  
+	int 0x1A                      ; Chama a interrupção que retorna o tempo atual
+	                              ; nos registradores CX e DX.
+								  
+	sub dx, bx                    ; Subtrai o valor armazenado no registrador BX
+	                              ; do valor atual em DX.
+								  
+	cmp dx, 20                    ; Calcula se o número de ticks é igual a 20, 
+	                              ; que corresponde a 1 segundo.
+								  
+	jl .wait_loop                 ; Se não atingiu o número de 20 ticks, retorna
+	                              ; ao loop novamente.
+
+	sti                           ; Retoma as interrupções mascaráveis.
+
+	ret                           ; Retorna o controle para o ponto de chamada.
+	
+	
+	
+	
 ; =============================================================================
 ;
 ; ERRO DE DISCO
@@ -634,6 +610,24 @@ disk_error:
 .show_menu:
 	
 	jmp show_menu                 ; Salta para o bloco de exibição do menu.
+
+
+
+
+; =============================================================================
+;
+; IMPORTAÇÃO DE CÓDIGO COMPARTILHADO
+;
+;
+; Importa rotinas compartilhadas pelos 3 estágios do bootloader do arquivo de 
+; código-fonte "shared.asm".
+;
+; =============================================================================
+
+
+imports:
+	
+	%include "shared.asm"
 
 
 

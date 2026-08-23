@@ -154,7 +154,152 @@
 
 
 
-jmp start                         ; Salta para o ponto de entrada do programa.
+; =============================================================================
+;
+; PONTO DE ENTRADA DO PROGRAMA
+;
+;
+; A execução deste estágio inicia nesta rotina. A rotina faz o reset da pilha,
+; no mesmo endereço configurado pelo Estágio 1, configura os registradores de
+; segmentos, faz o reset do mapa do jogo e variáveis de controle, configura
+; o modo de vídeo, atribui tratadores de interrupção personalizados e prepara
+; para a execução do jogo. 
+;
+; =============================================================================
+
+
+start:
+
+	cli                           ; Interrompe as interrupções mascaráveis para
+	                              ; configurar o programa.
+
+	; -------------------------------------------------------------------------
+	; Configura os registradores de segmentos que vão ser usados pelo programa.
+	; -------------------------------------------------------------------------
+
+	mov sp, 0xFFFF                ; Move o ponteiro para o topo da pilha.
+	
+	mov ax, 0x08A0                ; Copia o valor 0x08A0 para o registrador AX.
+								  
+	mov es, ax                    ; Define a base do segmento de dados extras em
+	                              ; ES no endereço 0x8A00 (0x08A0 x 0x10). Neste
+								  ; segmento está o mapa do jogo e variáveis de
+								  ; controle.
+	
+	mov ax, 0xA000                ; Copia o valor 0xA000 para o registrador AX.
+								  
+	mov gs, ax                    ; Define a base do segmento de vídeo em GS, no 
+	                              ; modo "VGA 13h", que por padrão é 0xA0000.
+	
+	mov ax, 0x0000                ; Copia o valor 0x0000 para o registrador AX.
+								  
+	mov fs, ax                    ; Define a base do segmento da IVT em FS, que 
+	                              ; por padrão é 0x0000.
+	
+	; -------------------------------------------------------------------------
+	; Faz o reset das variáveis no segmento de dados apontado pelo registrador 
+	; ES. Estas variáveis são o mapa do jogo (map) e variáveis de controle
+	; utilizadas pela lógica do programa (hptr, tptr, fptr, fctr, etc).
+	; -------------------------------------------------------------------------
+
+	mov cx, 1041                  ; Define o número de bytes a serem zerados na
+	                              ; memória (map + hptr + ... + ftim).
+								  
+	mov al, EMPTY                 ; Define o valor a ser gravado nos bytes de 
+	                              ; memória como EMPTY (zeros binários).
+								  
+	mov di, 0                     ; Define DI inicialmente como zero (DI apontará
+	                              ; para a base do segmento de dados ES).
+								  
+	rep stosb                     ; Grava o valor de AL, a partir do offset apontado
+	                              ; por DI, por CX vezes (1041).
+
+	; -------------------------------------------------------------------------
+	; Define o nível de dificuldade como nível 2 (default).
+	; -------------------------------------------------------------------------
+
+	mov temp, 2                   ; Define o nível de dificuldade como 2.
+								  
+	call set_level                ; Aplica o nível de dificuldade.
+
+	; -------------------------------------------------------------------------
+	; Obtém a semente inicial para a geração de números pseudo-aleatórios. No 
+	; caso, recupera informações da data e hora atuais do sistema para isso.
+	; -------------------------------------------------------------------------
+
+	mov ah, 0x00                  ; Define a função 0 da interrupção de relógio 
+	                              ; do BIOS (lê o tempo atual do sistema).
+								  
+	int 0x1A                      ; Chama a interrupção que retorna o tempo atual 
+	                              ; nos registradores CX e DX.
+								  
+	mov rand, dx                  ; Copia o valor de DX em rand para ser semente 
+	                              ; do processo de geração de números aleatórios.
+
+	; -------------------------------------------------------------------------
+	; Exibe as instruções do jogo e configura o vídeo para o modo VGA 13h após
+	; se teclar ENTER.
+	; -------------------------------------------------------------------------
+
+	call clear_screen             ; Limpa a tela completamente.
+	
+	call print_help               ; Imprime as instruções do jogo. Neste ponto
+	                              ; o vídeo ainda está no modo VGA 3h.
+
+	mov ah, 0x00                  ; Define a função 0 da interrupção de vídeo.
+	
+	mov al, 0x13                  ; Define o modo gráfico como 320x200 pixels e
+	                              ; 256 cores (VGA 13h).
+								  
+	int 0x10                      ; Chama a interrupção que configura o modo de
+	                              ; vídeo.
+
+	call print_score              ; Imprime o placar zerado.
+	
+	; -------------------------------------------------------------------------
+	; Configura tratadores de interrupção personalizados na IVT (Interrupt Vector 
+	; Table.
+	;
+	;   1. Sobrescreve a rotina de tratamento de interrupção (ISR) do relógio na 
+	;      IVT (INT 0x08) para apontar para a rotina timer_handler.
+	;
+	;   2. Sobrescreve a rotina de tratamento de interrupção do teclado na IVT
+	;      (INT 0x09) para apontar para a rotina keyboard_handler.
+	;
+	; Após a execução da instrução STI, as interrupções passarão a ser tratadas
+	; pelos tratadores atribuídos.
+	; -------------------------------------------------------------------------
+
+	mov [fs:0x08*4], word timer_handler
+	mov [fs:0x08*4+2], ds
+
+	mov [fs:0x09*4], word keyboard_handler
+	mov [fs:0x09*4+2], ds
+	
+	sti                           ; Retoma as interrupções mascaráveis após as 
+	                              ; configurações.
+
+
+
+
+; =============================================================================
+;
+; LOOP PRINCIPAL
+;
+;
+; Entra num loop infinito, "ouvindo" as interrupções monitoradas na tabela de
+; vetores de interrupção (IVT).
+;
+; =============================================================================
+
+
+main:
+
+	hlt                           ; Aguarda evento de interrupção em modo de baixo
+	                              ; consumo de energia.
+
+	jmp main                      ; Loop infinito, escutando os eventos de relógio
+	                              ; e de teclado.
 
 
 
@@ -2328,156 +2473,6 @@ power_off:
 imports:
 
 	%include "shared.asm"
-	
-	
-	
-
-; =============================================================================
-;
-; PONTO DE ENTRADA DO PROGRAMA
-;
-;
-; A execução deste estágio inicia nesta rotina. A rotina faz o reset da pilha,
-; no mesmo endereço configurado pelo Estágio 1, configura os registradores de
-; segmento, faz o reset do mapa do jogo e variáveis de controle, configura
-; o modo de vídeo, atribui tratadores de interrupção personalizados e prepara
-; para a execução do jogo. 
-;
-; =============================================================================
-
-
-start:
-
-	cli                           ; Interrompe as interrupções mascaráveis para
-	                              ; configurar o programa.
-
-	; -------------------------------------------------------------------------
-	; Configura os registradores de segmentos que vão ser usados pelo programa.
-	; -------------------------------------------------------------------------
-
-	mov sp, 0xFFFF                ; Move o ponteiro para o topo da pilha.
-	
-	mov ax, 0x08A0                ; Copia o valor 0x08A0 para o registrador AX.
-								  
-	mov es, ax                    ; Define a base do segmento de dados extras em
-	                              ; ES no endereço 0x8A00 (0x08A0 x 0x10). Neste
-								  ; segmento está o mapa do jogo e variáveis de
-								  ; controle.
-	
-	mov ax, 0xA000                ; Copia o valor 0xA000 para o registrador AX.
-								  
-	mov gs, ax                    ; Define a base do segmento de vídeo em GS, no 
-	                              ; modo "VGA 13h", que por padrão é 0xA0000.
-	
-	mov ax, 0x0000                ; Copia o valor 0x0000 para o registrador AX.
-								  
-	mov fs, ax                    ; Define a base do segmento da IVT em FS, que 
-	                              ; por padrão é 0x0000.
-	
-	; -------------------------------------------------------------------------
-	; Faz o reset das variáveis no segmento de dados apontado pelo registrador 
-	; ES. Estas variáveis são o mapa do jogo (map) e variáveis de controle
-	; utilizadas pela lógica do programa (hptr, tptr, fptr, fctr, etc).
-	; -------------------------------------------------------------------------
-
-	mov cx, 1041                  ; Define o número de bytes a serem zerados na
-	                              ; memória (map + hptr + ... + ftim).
-								  
-	mov al, EMPTY                 ; Define o valor a ser gravado nos bytes de 
-	                              ; memória como EMPTY (zeros binários).
-								  
-	mov di, 0                     ; Define DI inicialmente como zero (DI apontará
-	                              ; para a base do segmento de dados ES).
-								  
-	rep stosb                     ; Grava o valor de AL, a partir do offset apontado
-	                              ; por DI, por CX vezes (1041).
-
-	; -------------------------------------------------------------------------
-	; Define o nível de dificuldade como nível 2 (default).
-	; -------------------------------------------------------------------------
-
-	mov temp, 2                   ; Define o nível de dificuldade como 2.
-								  
-	call set_level                ; Aplica o nível de dificuldade.
-
-	; -------------------------------------------------------------------------
-	; Obtém a semente inicial para a geração de números pseudo-aleatórios. No 
-	; caso, recupera informações da data e hora atuais do sistema para isso.
-	; -------------------------------------------------------------------------
-
-	mov ah, 0x00                  ; Define a função 0 da interrupção de relógio 
-	                              ; do BIOS (lê o tempo atual do sistema).
-								  
-	int 0x1A                      ; Chama a interrupção que retorna o tempo atual 
-	                              ; nos registradores CX e DX.
-								  
-	mov rand, dx                  ; Copia o valor de DX em rand para ser semente 
-	                              ; do processo de geração de números aleatórios.
-
-	; -------------------------------------------------------------------------
-	; Exibe as instruções do jogo e configura o vídeo para o modo VGA 13h após
-	; se teclar ENTER.
-	; -------------------------------------------------------------------------
-
-	call clear_screen             ; Limpa a tela completamente.
-	
-	call print_help               ; Imprime as instruções do jogo. Neste ponto
-	                              ; o vídeo ainda está no modo VGA 3h.
-
-	mov ah, 0x00                  ; Define a função 0 da interrupção de vídeo.
-	
-	mov al, 0x13                  ; Define o modo gráfico como 320x200 pixels e
-	                              ; 256 cores (VGA 13h).
-								  
-	int 0x10                      ; Chama a interrupção que configura o modo de
-	                              ; vídeo.
-
-	call print_score              ; Imprime o placar zerado.
-	
-	; -------------------------------------------------------------------------
-	; Configura tratadores de interrupção personalizados na IVT (Interrupt Vector 
-	; Table.
-	;
-	;   1. Sobrescreve a rotina de tratamento de interrupção (ISR) do relógio na 
-	;      IVT (INT 0x08) para apontar para a rotina timer_handler.
-	;
-	;   2. Sobrescreve a rotina de tratamento de interrupção do teclado na IVT
-	;      (INT 0x09) para apontar para a rotina keyboard_handler.
-	;
-	; Após a execução da instrução STI, as interrupções passarão a ser tratadas
-	; pelos tratadores atribuídos.
-	; -------------------------------------------------------------------------
-
-	mov [fs:0x08*4], word timer_handler
-	mov [fs:0x08*4+2], ds
-
-	mov [fs:0x09*4], word keyboard_handler
-	mov [fs:0x09*4+2], ds
-	
-	sti                           ; Retoma as interrupções mascaráveis após as 
-	                              ; configurações.
-
-
-
-
-; =============================================================================
-;
-; LOOP PRINCIPAL
-;
-;
-; Entra num loop infinito, "ouvindo" as interrupções monitoradas na tabela de
-; vetores de interrupção (IVT).
-;
-; =============================================================================
-
-
-main:
-
-	hlt                           ; Aguarda evento de interrupção em modo de baixo
-	                              ; consumo de energia.
-
-	jmp main                      ; Loop infinito, escutando os eventos de relógio
-	                              ; e de teclado.
 
 
 
