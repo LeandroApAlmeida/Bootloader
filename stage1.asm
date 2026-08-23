@@ -68,7 +68,7 @@
 ; Instrução de salto, para manter o alinhamento das instruções no MBR. Na sequência
 ; a estas instruções seriam declarados os campos do BPB/EPBP. Nesta imagem de disco
 ; NÃO devem ser declarados estes campos, pois é uma imagem RAW, sem estrutura de
-; sistema de arquivos definida (FAT-12, FAT-16, FAT-32, ext1, ext2, etc). Declarar 
+; sistema de arquivos definida (FAT-12, FAT-16, FAT-32, NTFS, EXT, etc). Declarar 
 ; estes campos causaria a leitura incorreta da imagem e falha. Sem declará-los, 
 ; o BIOs vai tratar a imagem de modo default.
 ;
@@ -178,9 +178,9 @@ nop
 ; │                          │             │ 0x8A00->0x8FFF         │         │
 ; │ Extended BIOS Data Area  │             │                        │         │
 ; │                          │             │------------------------│ 0x8A00  │
-; │                          │           . │                        │         │
-; │--------------------------│ 0x9FC00  .  │ Stage 3 (2.048 bytes)  │         │
-; │                          │         .   │ 0x8200->0x89FF         │         │
+; │                          │             │                        │         │
+; │--------------------------│ 0x9FC00     │ Stage 3 (2.048 bytes)  │         │
+; │                          │             │ 0x8200->0x89FF         │         │
 ; │--                      --│-0x18FFF ┬   │                        │         │
 ; │ Free                     │         │   │------------------------│ 0x8200  │
 ; │                          │         │   │                        │         │
@@ -188,9 +188,9 @@ nop
 ; ├──────────────────────────┤ 0x7E00  ┼   │ 0x7E00->0x81FF         │         │
 ; │ Loaded Boot Sector       │         │   │                        │         │
 ; ├──────────────────────────┤-0x7C00  ┴   ├────────────────────────┤ 0x7E00  ┼
-; │ Free                     │         .   │                        │         │
-; │                          │          .  │ Stage 1 (512 bytes)    │         │
-; │--------------------------│ 0x500     . │ 0x7C00->0x7DFF         │         │
+; │ Free                     │             │                        │         │
+; │                          │             │ Stage 1 (512 bytes)    │         │
+; │--------------------------│ 0x500       │ 0x7C00->0x7DFF         │         │
 ; │ BIOS Data Area           │             │                        │         │
 ; │--------------------------│ 0x400       ├────────────────────────┤ 0x7C00  ┴
 ; │ Interrupt Vector Table   │             │ Free                   │                            
