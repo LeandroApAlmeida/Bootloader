@@ -2,26 +2,44 @@
 ;                        STAGE 1 - MULT-STAGE BOOTLOADER
 ; ═════════════════════════════════════════════════════════════════════════════
 ;
-; Este código em Assembly implementa o Estágio 1 do bootloader, que será gravado
-; no setor MBR (Master Boot Record) do disco. O Estágio 1 carregará na memória o
-; Estágio 2, que é o programa que exibe o menu do sistema operacional FAKENIX e 
-; que carrega o Estágio 3, que é o kernel fictício do jogo da cobrinha.
+; Este código em assembly implementa o Estágio 1 do bootloader, que será gravado
+; no setor MBR (Master Boot Record) do disco de boot. O Estágio 1 carregará na 
+; memória o Estágio 2, que é o programa que exibe o menu do sistema operacional 
+; FAKENIX e que carrega o Estágio 3, que é o kernel fictício do jogo da cobrinha.
 ;
 ; Este é um projeto básico, que tem como objetivo única e exclusivamente demonstrar
-; o processo em que o hardware e o software se comunica, para "dar vida" ao computador,
-; desmistificando um pouco como um computador realmente funciona e instigando o
-; interessado a buscar mais informações sobre o tema. Se você deseja se aprofundar
-; mais no desenvolvimento de sistemas operacionais, sugiro que visite a página
-; http://www.brokenthorn.com/Resources/OSDevIndex.html que contém um ótimo material
-; para iniciantes, e também a página 
-; https://www.independent-software.com/operating-system-development.html, onde te
-; instrui passo a passo como desenvolver um sistema operacional "do zero".
+; como o hardware e o software se comunicam no baixo nível para "dar vida" ao 
+; computador, desmistificando um pouco como um computador real funciona e instigando
+; o interessado a buscar mais informações sobre o tema.
+;
+; Se você deseja se aprofundar mais no desenvolvimento de sistemas operacionais, 
+; sugiro que visite a página:
+;
+;
+; http://www.brokenthorn.com/Resources/OSDevIndex.html 
+;
+;
+; que contém um ótimo material para iniciantes, e também a página:
+;
+; 
+; https://www.independent-software.com/operating-system-development.html
+;
+;
+; onde te instrui passo a passo como desenvolver um sistema operacional "do zero".
 ; 
 ; Se sua intenção é entender um sistema operacional real, depois de ter uma noção
 ; básica de como o bootloader funciona, recomendo que analise o código do MS DOS,
-; disponibilizado pela Microsoft na página do github em 
-; https://github.com/microsoft/MS-DOS/tree/main, e o código-fonte do Minix, disponível
-; no github em https://github.com/Stichting-MINIX-Research-Foundation/minix. 
+; disponibilizado pela Microsoft na página do github em:
+;
+; 
+; https://github.com/microsoft/MS-DOS/tree/main
+;
+;
+; e também o código-fonte do Minix, disponível no github em:
+;
+;
+; https://github.com/Stichting-MINIX-Research-Foundation/minix
+;
 ;
 ; Se se interessou pelo tema assembly e aspectos da programação em baixo nível, 
 ; recomendo ainda que analise um sistema operacional construído inteiramente nesta
@@ -51,16 +69,6 @@
 ; causaria a leitura incorreta da imagem e falha. Sem declará-los, o BIOs vai tratar
 ; a imagem de modo default.
 ;
-; Para criar uma imagem de disco formatada como FAT-12, um formato de sistema de
-; arquivos do DOS/Windows, veja o exemplo na página 
-; https://github.com/kalehmann/SiBoLo. No blog do autor, disponível em 
-; https://blog.kalehmann.de/blog/2017/07/20/simple-boot-loader.html, ele comenta
-; o passo a passo de como gerar a imagem formatada.
-;
-; Para criar uma imagem de disco formatada como Ext3, um formato de sistema de
-; arquivos do Linux, veja o exemplo na página 
-; https://github.com/devekar/Bootloader/tree/master.
-;
 ; =============================================================================
 
 
@@ -76,9 +84,11 @@ nop
 ;
 ;
 ; Ao executar esta rotina, será configurada a pilha do bootloader e realizados
-; alguns ajustes de hardware. Para entender como a pilha será configurada, 
-; primeiramente analise o diagrama de como a memória RAM do computador está 
-; organizada no momento em que este bootloader é carregado.
+; alguns ajustes de hardware.
+;
+; Para entender como a pilha será configurada, primeiramente analise o diagrama 
+; de como a memória RAM do computador está organizada no momento em que este 
+; bootloader é carregado.
 ;
 ;
 ;                               Memory (RAM)
@@ -121,16 +131,20 @@ nop
 ;         
 ;
 ; A memória baixa (memória abaixo de 1 megabyte) estará dividida em diversas seções,
-; iniciando pela Interrupt Vector Table (IVT), no endereço 0x0. Quando finalizar
-; o POST (Power-On Self Test), o BIOS está programado para buscar por um disco
-; de inicialização e carregar os 512 bytes que estão gravados no setor MBR (Master
-; Boot Record) deste disco para o endereço 0x7C00 da memória. Na sequência, o BIOS
-; entrega o controle do computador para este programa.
+; iniciando pela Interrupt Vector Table (IVT), no endereço 0x0. A IVT contém os
+; ponteiros para as rotinas de tratamento de interrupções em Modo Real (consulte 
+; a documentação da arquitetura x86 para entender o que cada seção da memória 
+; representa em Modo Real).
+;
+; Quando finalizar o POST (Power-On Self Test), o BIOS está programado para buscar
+; por um disco de inicialização e carregar os 512 bytes que estão gravados no setor
+; MBR (Master Boot Record) deste disco para o endereço 0x7C00 da memória. Na sequência,
+; o BIOS entrega o controle do computador para este programa.
 ;
 ; O programa lido pelo BIOS no setor MBR do disco e carregado no endereço 0x7C00
 ; da memória será este primeiro estágio do bootloader. As primeiras instruções
-; executadas quando o controle do programa for entregue para ele serão as desta
-; rotina, que como vimos, configura a pilha do bootloader e o hardware.
+; executadas quando o controle for entregue para ele serão as desta rotina, que 
+; como vimos, configura a pilha do bootloader e o hardware.
 ;
 ; O endereço de memória do segmento de pilha, apontado pelo registrador de segmento
 ; SS, será o 0x9000. Este endereço não foi escolhido ao acaso. Ele foi calculado
@@ -144,7 +158,7 @@ nop
 ; carregados:
 ;
 ;
-;         Memory (RAM)                             Bootloader                                                                          
+;         Memory (RAM)                       Mult-Stage Bootloader                                                                          
 ;                                            
 ; │ Free                     │             │                        │
 ; │--------------------------│ 0x100000    │                        │  
@@ -160,9 +174,9 @@ nop
 ; │                          │             │ 0x8A00->0x8FFF         │         │
 ; │ Extended BIOS Data Area  │             │                        │         │
 ; │                          │             │------------------------│ 0x8A00  │
-; │                          │             │                        │         │
-; │--------------------------│ 0x9FC00     │ Stage 3 (2.048 bytes)  │         │
-; │                          │             │ 0x8200->0x89FF         │         │
+; │                          │           . │                        │         │
+; │--------------------------│ 0x9FC00  .  │ Stage 3 (2.048 bytes)  │         │
+; │                          │         .   │ 0x8200->0x89FF         │         │
 ; │--                      --│-0x18FFF ┬   │                        │         │
 ; │ Free                     │         │   │------------------------│ 0x8200  │
 ; │                          │         │   │                        │         │
@@ -170,9 +184,9 @@ nop
 ; ├──────────────────────────┤ 0x7E00  ┼   │ 0x7E00->0x81FF         │         │
 ; │ Loaded Boot Sector       │         │   │                        │         │
 ; ├──────────────────────────┤-0x7C00  ┴   ├────────────────────────┤ 0x7E00  ┼
-; │ Free                     │             │                        │         │
-; │                          │             │ Stage 1 (512 bytes)    │         │
-; │--------------------------│ 0x500       │ 0x7C00->0x7DFF         │         │
+; │ Free                     │         .   │                        │         │
+; │                          │          .  │ Stage 1 (512 bytes)    │         │
+; │--------------------------│ 0x500     . │ 0x7C00->0x7DFF         │         │
 ; │ BIOS Data Area           │             │                        │         │
 ; │--------------------------│ 0x400       ├────────────────────────┤ 0x7C00  ┴
 ; │ Interrupt Vector Table   │             │ Free                   │                            
@@ -180,8 +194,8 @@ nop
 ;
 ;             (a)                                     (b)
 ;
-;   (a) Área de memória do bootloader (endereços de 0x7C00 a 0x18FFF). (b) Organização
-;   do bootloader na memória. 
+;   (a) Área de memória do bootloader de multiplos estágios (endereços de 0x7C00
+;   a 0x18FFF). (b) Organização do bootloader de multiplos estágios na memória. 
 ;
 ;   A memória alocada para o bootloader estará dividida nas seguintes seções:
 ;     
@@ -217,13 +231,13 @@ nop
 ;
 ;
 ; Os registradores SS (Stack Segment) e SP (Stack Pointer) são utilizados para
-; delimitar o segmento de memória da pilha. SS aponta para o endereço inicial da
-; pilha (base da pilha), que como já vimos, será o endereço físico 0x9000, e SP
-; aponta para o endereço do topo da pilha.
+; o segmento de pilha. SS aponta para o endereço inicial da pilha (base da pilha), 
+; que como já vimos, será o endereço físico 0x9000, e SP aponta para o endereço
+; do topo da pilha.
 ;
 ; Até este ponto, tudo foi calculado com base no endereço físico de memória de
 ; cada estágio do bootloader. Mas para calcular os valores de SS e SP, o esquema
-; de endereçamento de segmentos na arquitetura x86 em modo real é tratado pelo
+; de endereçamento de segmentos na arquitetura x86 em Modo Real é tratado pelo
 ; processador da seguinte forma:
 ;
 ;
@@ -231,7 +245,7 @@ nop
 ;
 ;
 ; Isso significa que para posicionar o início da pilha no endereço físico 0x9000,
-; o registrador de segmento SS (Base do Segmento) deve receber o valor 0x900 
+; o registrador de segmento SS (base do segmento) deve receber o valor 0x900 
 ; (0x9000 / 0x10 = 0x900). O valor de SP será o deslocamento (offset) dentro do
 ; segmento de pilha, que inicia em 0x0. Como a arquitetura x86 usa registradores
 ; de 16 bits, o valor máximo de deslocamento em SP será 0xFFFF.
@@ -326,9 +340,9 @@ nop
 ; gerar interrupções periódicas, que na configuração default emite um tick a cada
 ; cerca de 55 ms, para emitir um tick a cada 50 ms. Outra configuração, que é 
 ; default, mas que será definida explicitamente, será o modo de vídeo, que aqui 
-; é configurado para o modo VGA 3h (80 caracteres x 25 linhas). A configuração 
-; de vídeo será trocada no Estágio 3 para "VGA 13h", para exibir pixels na tela 
-; quando for renderizar o jogo da cobrinha.
+; é configurado para o modo VGA 3h (80 caracteres x 25 linhas, 256 cores). A 
+; configuração de vídeo será trocada no Estágio 3 para "VGA 13h", para exibir 
+; pixels na tela quando for renderizar o jogo da cobrinha.
 ;
 ; =============================================================================
 
@@ -366,10 +380,10 @@ start:
 	; Faz o reset do disco, preparando-o para a leitura do segundo estágio.
 	; -------------------------------------------------------------------------
 	
-	mov dl, [drive_number]        ; Copia o código do drive do boot em DL.
+	mov dl, [drive_number]        ; Copia o código do drive de boot em DL.
 	
 	xor ax, ax                    ; Define a função 0 da interrupção de disco 
-	                              ; (reset do disco).
+	                              ; do BIOS (reset do disco).
 								  
 	int 0x13                      ; Chama a interrupção de disco do BIOS para 
 	                              ; reset dos controladores.
@@ -382,8 +396,8 @@ start:
 	; relógio tenha exatos 50 ms (20 Hz).
 	; -------------------------------------------------------------------------
 	
-	mov al, 0x36                  ; Configura o PIT no modo 3 (Square Wave Generator
-	                              ; - gerador de onda quadrada).
+	mov al, 0x36                  ; Configura o PIT no modo 3 (Square Wave
+	                              ; Generator - gerador de onda quadrada).
 								  
 	out 0x43, al                  ; Envia o comando de configuração para a porta
 	                              ; 43h.
@@ -398,10 +412,12 @@ start:
 	out 0x40, al                  ; Envia o byte mais significativo em AH.
 
 	; -------------------------------------------------------------------------
-	; Configura o modo de vídeo para o modo VGA 3h (80 colunas x 25 linhas).
+	; Configura o modo de vídeo para o modo VGA 3h (80 colunas x 25 linhas, 
+	; 256 cores).
 	; -------------------------------------------------------------------------
 
-	mov ah, 0x00                  ; Define a função 0 da interrupção de vídeo.
+	mov ah, 0x00                  ; Define a função 0 da interrupção de vídeo
+	                              ; do BIOS.
 	
     mov al, 0x03                  ; Define o modo de vídeo como modo VGA 3h.
 	

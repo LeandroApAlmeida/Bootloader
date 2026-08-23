@@ -1,9 +1,34 @@
+; ═════════════════════════════════════════════════════════════════════════════
+;                        SHARED - MULT-STAGE BOOTLOADER
+; ═════════════════════════════════════════════════════════════════════════════
+;
+; Este arquivo de código-fonte contém rotinas que são utilizadas pelos três
+; estágios do bootloader, portanto, ele evita a duplicação desnecessária de
+; código. Isso é possível pois os três programas são Modo Real (16-bit), o que
+; possibilita o compartilhamento de código entre ambos.
+;
+; A importação das rotinas compartilhadas para o código-fonte de um estágio se 
+; dá com o uso da diretiva %include, desta forma:
+;
+;
+;     %include "shared.asm"
+;
+;
+; A diretiva %include do pré-processador NASM funciona como um "copiar e colar" 
+; no código. Ele pega o código-fonte deste módulo e insere no ponto exato onde
+; ela está sendo declarada no código-fonte do estágio.
+;
+; ═════════════════════════════════════════════════════════════════════════════
+
+
+
+
 ; =============================================================================
 ;
-; IMPRESSÃO DE STRING NA POSIÇÃO DO CURSOR
+; IMPRIMIR STRING
 ;
 ;
-; Ao executar esta função, imprime uma string no terminal, na posição atual do
+; Ao executar esta função imprime uma string no terminal, na posição atual do
 ; cursor, caractere por caractere, até encontrar o byte nulo 0x00, que denota o 
 ; final da string.
 ;
@@ -47,10 +72,15 @@ print_string:
 ; DESLIGAR O COMPUTADOR VIA APM
 ;
 ;
-; Como estou usando funções de APM (Advanced Power Management) para desligar o
-; computador em Modo Real, em hardware real não iria funcionar nas máquinas pós 
-; anos 1990/2000. Porém na máquina virtual QEMU, utilizada para os testes, ela 
-; ainda funciona.
+; Em Modo Real não é possível ter acesso à ACPI para desligar o computador, por
+; limitações no acesso à memória do computador. Dessa forma, uso funções de APM 
+; (Advanced Power Management) para tentar o desligamento.
+;
+; Em hardware real estas funções não irão funcionar nas máquinas pós anos 
+; 1990/2000. Ainda assim utilizo, pois a máquina virtual Qemu onde os testes são
+; realizados implementa funções de APM, e, portanto, permite sair do terminal
+; teclando ESC quando está no jogo. Quando testado no computador real, estas
+; funções falham, como é o esperado.
 ;
 ; =============================================================================
 
@@ -143,8 +173,8 @@ shutdown:
 								  ; comportamento indesejado.
 								  ; -------------------------------------------
     
-	hlt                           ; Entra em modo de baixa energia até a próxima 
-	                              ; interrupção ("congela")
+	hlt                           ; Entra em modo de baixa energia.
+	                              
     jmp .hang
 	
 	
@@ -152,10 +182,10 @@ shutdown:
 	
 ; =============================================================================
 ;
-; AGUARDAR A TECLA ENTER SER PRESSIONADA
+; AGUARDAR ENTER
 ;
 ;
-; Ao executar esta rotina, fica lendo o teclado até se digitar ENTER.
+; Ao executar esta rotina, fica lendo o teclado até se pressionar a tecla ENTER.
 ;
 ; =============================================================================
 
@@ -163,7 +193,7 @@ shutdown:
 wait_enter:
     
 	mov ah, 0x00                  ; Define a função 0 da interrupção de teclado 
-	                              ; (leitura de tecla).
+	                              ; do BIOS (leitura de tecla).
 								  
     int 0x16                      ; Chama a interrupção para ler a tecla pressionada.
 	
