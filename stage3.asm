@@ -262,14 +262,14 @@ start:
 	call print_score              ; Imprime o placar zerado.
 	
 	; -------------------------------------------------------------------------
-	; Configura tratadores de interrupção personalizados na IVT (Interrupt Vector 
-	; Table.
+	; Configura tratadores de interrupção personalizados (Interruption Service 
+	; Routine - ISR) na IVT (Interrupt Vector Table).
 	;
-	;   1. Sobrescreve a rotina de tratamento de interrupção (ISR) do relógio na 
-	;      IVT (INT 0x08) para apontar para a rotina timer_handler.
+	;   1. Sobrescreve a rotina de tratamento de interrupção (ISR) do relógio 
+	;      (IRQ0) na IVT (INT 0x08) para apontar para a rotina timer_handler.
 	;
-	;   2. Sobrescreve a rotina de tratamento de interrupção do teclado na IVT
-	;      (INT 0x09) para apontar para a rotina keyboard_handler.
+	;   2. Sobrescreve a rotina de tratamento de interrupção do teclado (IRQ1)
+	;      na IVT (INT 0x09) para apontar para a rotina keyboard_handler.
 	;
 	; Após a execução da instrução STI, as interrupções passarão a ser tratadas
 	; pelos tratadores atribuídos.
