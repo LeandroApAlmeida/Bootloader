@@ -275,11 +275,14 @@ start:
 	; pelos tratadores atribuídos.
 	; -------------------------------------------------------------------------
 
+	xor ax, ax                    ; Executa uma operação lógica XOR do registrador
+	                              ; AX com ele mesmo, zerando-o.
+
 	mov [fs:0x08*4], word timer_handler
-	mov [fs:0x08*4+2], ds
+	mov [fs:0x08*4+2], ax
 
 	mov [fs:0x09*4], word keyboard_handler
-	mov [fs:0x09*4+2], ds
+	mov [fs:0x09*4+2], ax
 	
 	sti                           ; Retoma as interrupções mascaráveis após as 
 	                              ; configurações.
