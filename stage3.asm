@@ -184,6 +184,12 @@ start:
 
 	mov sp, 0xFFFF                ; Move o ponteiro para o topo da pilha.
 	
+	xor ax, ax                    ; Executa uma operação lógica XOR do registrador
+	                              ; AX com ele mesmo, zerando-o.
+	
+	mov ds, ax                    ; Define os offsets dos tratadores de interrupções
+	                              ; como 0.
+	
 	mov ax, 0x08A0                ; Copia o valor 0x08A0 para o registrador AX.
 								  
 	mov es, ax                    ; Define a base do segmento de dados extras em
