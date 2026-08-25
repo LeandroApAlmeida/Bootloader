@@ -383,9 +383,6 @@ load_stage3:
 	
 	call delay                    ; Simula um tempo de processamento para o 
 	call delay                    ; carregamento do Estágio 3.
-	call delay                    ; ...
-	call delay                    ; ...
-	call delay                    ; ...
     
 	call clear_screen             ; Limpa o terminal, mantendo apenas o cabeçalho.
 	

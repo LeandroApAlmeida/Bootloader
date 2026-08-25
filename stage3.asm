@@ -2461,9 +2461,9 @@ power_off:
 	
 	call shutdown                 ; Chama a rotina para abortar a execução.
 
+
 	
-
-
+	
 ; =============================================================================
 ;
 ; IMPORTAÇÃO DE CÓDIGO COMPARTILHADO
