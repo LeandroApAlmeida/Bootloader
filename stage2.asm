@@ -148,6 +148,9 @@ show_menu:
 
 .wait_key:
 
+	hlt                           ; Aguarda evento de interrupção em modo de baixo
+	                              ; consumo de energia.
+
     mov ah, 0x00                  ; Define a função 0 da interrupção de teclado 
 	                              ; do BIOS (leitura de tecla).
 								  
