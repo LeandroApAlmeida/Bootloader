@@ -3,9 +3,9 @@
 ; ═════════════════════════════════════════════════════════════════════════════
 ;
 ; Este código em assembly implementa o Estágio 1 do bootloader, que será gravado
-; no setor MBR (Master Boot Record) do disco de boot. O Estágio 1 carregará na 
-; memória o Estágio 2, que é o programa que exibe o menu do sistema operacional 
-; Fakenix e que carrega o Estágio 3, que é o kernel fictício do jogo da cobrinha.
+; no setor de boot do disco. O Estágio 1 carregará na memória o Estágio 2, que 
+; é o programa que exibe o menu do sistema operacional Fakenix e que carrega o 
+; Estágio 3, que é o kernel fictício do jogo da cobrinha.
 ;
 ; Este é um projeto básico, que tem como objetivo única e exclusivamente demonstrar
 ; como o hardware e o software se comunicam no baixo nível para "dar vida" ao 
@@ -25,7 +25,8 @@
 ; https://www.independent-software.com/operating-system-development.html
 ;
 ;
-; onde te instrui passo a passo como desenvolver um sistema operacional "do zero".
+; onde te instrui passo a passo como desenvolver um sistema operacional "do zero"
+; também para sistemas BIOS.
 ; 
 ; Se sua intenção é entender um sistema operacional real, depois de ter uma noção
 ; básica de como o bootloader funciona, recomendo que analise o código do MS DOS,
@@ -51,8 +52,8 @@
 ; ═════════════════════════════════════════════════════════════════════════════
 
 
-[BITS 16]                         ; O programa do Estágio 1 roda em modo real 
-                                  ; de 16 bits.
+[BITS 16]                         ; O programa do Estágio 1 roda em modo real de 
+                                  ; 16 bits.
 								  
 [ORG 0x7C00]                      ; O programa será carregado no endereço padrão
                                   ; 0x7C00.
@@ -65,12 +66,12 @@
 ; ALINHAMENTO DAS INSTRUÇÕES
 ;
 ;
-; Instrução de salto, para manter o alinhamento das instruções no MBR. Na sequência
-; a estas instruções seriam declarados os campos do BPB/EPBP. Nesta imagem de disco
-; NÃO devem ser declarados estes campos, pois é uma imagem RAW, sem estrutura de
-; sistema de arquivos definida (FAT-12, FAT-16, FAT-32, NTFS, EXT, etc). Declarar 
-; estes campos causaria a leitura incorreta da imagem e falha. Sem declará-los, 
-; o BIOs vai tratar a imagem de modo default.
+; Instrução de salto, para manter o alinhamento das instruções no setor de boot.
+; Na sequência a estas instruções seriam declarados os campos do BPB/EPBP. Nesta 
+; imagem de disco NÃO devem ser declarados estes campos, pois é uma imagem RAW, 
+; sem estrutura de sistema de arquivos definida (FAT-12, FAT-16, FAT-32, NTFS, 
+; EXT, etc). Declarar estes campos causaria a leitura incorreta da imagem e falha. 
+; Sem declará-los, o BIOs vai tratar a imagem de modo default.
 ;
 ; =============================================================================
 
@@ -142,12 +143,12 @@ nop
 ;
 ; Quando finalizar o POST (Power-On Self Test), o BIOS está programado para buscar
 ; por um disco de inicialização e carregar os 512 bytes que estão gravados no setor
-; MBR (Master Boot Record) deste disco para o endereço 0x7C00 da memória. Na sequência,
-; o BIOS entrega o controle do computador para este programa.
+; de boot deste disco para o endereço 0x7C00 da memória. Na sequência, o BIOS 
+; entrega o controle do computador para este programa.
 ;
-; O programa lido pelo BIOS no setor MBR do disco e carregado no endereço 0x7C00
-; da memória será este primeiro estágio do bootloader. As primeiras instruções
-; executadas quando o controle for entregue para ele serão as desta rotina, que 
+; O programa lido pelo BIOS no setor de boot e carregado no endereço 0x7C00 da 
+; memória será este primeiro estágio do bootloader. As primeiras instruções
+; executadas quando o controle for entregue para ele serão as desta rotina, que
 ; como vimos, configura a pilha do bootloader e o hardware.
 ;
 ; O endereço de memória do segmento de pilha, apontado pelo registrador de segmento
@@ -205,9 +206,9 @@ nop
 ;     
 ;   STAGE 1 (Estágio 1)
 ;
-;   O Estágio 1, com 512 bytes, lido pelo BIOS do setor MBR do disco (setor de
-;   boot), ocupa os endereços de memória de 0x7C00 até 0x7DFF. É função do Estágio 1
-;   configurar o hardware e carregar na memória o Estágio 2.
+;   O Estágio 1, com 512 bytes, lido pelo BIOS do setor de boot do disco, ocupa
+;   os endereços de memória de 0x7C00 até 0x7DFF. É função do Estágio 1 configurar
+;   o hardware e carregar na memória o Estágio 2.
 ;
 ;   STAGE 2 (Estágio 2)
 ;
@@ -444,7 +445,7 @@ start:
 ;
 ; Esta rotina carrega o Estágio 2 na memória RAM, que implementa o menu do sistema
 ; operacional. O Estágio 2 tem 1024 bytes, ocupando o segundo e terceiro setores
-; do disco, logo adiante do Estágio 1, que está no MBR.
+; do disco, logo adiante do Estágio 1, que está no setor de boot.
 ;
 ; Para carregar o Estágio 2 via CHS (Cylinder-Head-Sector), será executada a
 ; interrupção de disco 0x13 do BIOS, que precisa de alguns parâmetros definidos:
@@ -464,7 +465,7 @@ start:
 ;
 ;   * CL: O valor de CL define o setor do disco a partir do qual se inicia a leitura.
 ;     No caso, o setor será o 2, já que o setor 1 é o código deste primeiro estágio
-;     no MBR.
+;     no setor de boot.
 ;
 ;
 ;   * DH: O valor de DH define a cabeça de leitura do disco (no caso, será a cabeça
@@ -598,7 +599,7 @@ disk_error_str:                   ; String de erro na leitura do disco.
 ; recebe o valor 0x55 e o byte no offset 0x01FF recebe o valor 0xAA. Isto constitui
 ; uma assinatura informando que é um disco inicializável para o firmware BIOS.
 ; Sem esta assinatura, mesmo o programa estando correto, o BIOS saltaria para o 
-; próximo disco na lista de boot, buscando por um MBR assinado com estes dois 
+; próximo disco na lista de boot, buscando por um setor assinado com estes dois 
 ; bytes.
 ; =============================================================================
 

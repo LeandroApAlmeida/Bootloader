@@ -347,14 +347,14 @@ power_off:
 ;     corresponde a leitura do disco.
 ;
 ;   * AL: O valor de AL define quantos setores do disco devem ser carregados para
-;     a memória. Como o terceiro estágio tem 2048 bytes, e o tamanho default do setor 
-;     é de 512 bytes, o valor de AL deve ser 4.
+;     a memória. Como o terceiro estágio tem 2048 bytes, e o tamanho default do 
+;     setor é de 512 bytes, o valor de AL deve ser 4.
 ;
 ;   * CH: O valor de CH define o cilindo do disco (no caso, será o cilindro 0).
 ;
 ;   * CL: O valor de CL define o setor do disco a partir do qual se inicia a leitura.
 ;     No caso, o setor será o 4, já que o setor 1 é o código do primeiro estágio
-;     no MBR e os setores 2 e 3 o código do segundo estágio.
+;     no setor de boot e os setores 2 e 3 o código do segundo estágio.
 ;
 ;   * DH: O valor de DH define a cabeça de leitura do disco (no caso, será a cabeça
 ;     0).
